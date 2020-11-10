@@ -111,27 +111,80 @@ class CharHasher:
         hashing is achieved by converting each char in each string in strList to its unicode 
         code point representation (see doc for charHash)
 
+        add method first identifies the slot where we should insert item
+        If that slot is None, then we insert item there
+        If slot is int, then we create a new instance of CharHasher, 
+        and insert it into that slot with parameters numList = [original entry, item]
+        If slot is a CharHasher, then we recursively call add for that slot
+
+        Note that we utilize chain collision resolution in our add functionality
+
         Args:
             strList (list): list of Strings to be hashed
             primes (list): list of prime numbers
         """
         self.hashTable, self.prime, self.loadFactor = charLoadFactorOptimizer(strList, primes)
     
-    def find(self, item):
+    def __repr__(self):
+        return f'{self.hashTable}'
+    
+    def __iter__(self):
+        # making HashFolder iterable
+        for item in self.hashTable:
+            yield item
+    
+    def add(self, item):
         """
-        uses charHash hashing algorithm to determine presence of item in self.hashTable
+        add first identifies the slot where we should insert item
+        If that slot is None, then we insert item there
+        If slot is int, then we create a new instance of CharHasher, 
+        and insert it into that slot with parameters numList = [original entry, item]
+        If slot is a CharHasher, then we recursively call add for that slot
+
+        Note that we utilize chain collision resolution in our add functionality
 
         Args:
-            item (str): string to be searched for in self.hashTable
+            item (int): integer to be added to self.hashTable
+        """
+        # first have to use foldNumber to find hashed value, to find index
+        total = charHash(item)
+        if not self.hashTable[total%self.prime]:
+            self.hashTable[total%self.prime] = item
+        else:
+            if self.hashTable[total%self.prime] == item: # avoiding duplicates
+                return
+            if type(self.hashTable[total%self.prime]) == str:
+                # if item at index is int, then create and insert a new instance of FoldHahser at index
+                itemList = [self.hashTable[total%self.prime], item]
+                # then insert new hashTable at that index
+                self.hashTable[total%self.prime] = CharHasher(itemList, primes)
+            else:
+                if type(self.hashTable[total%self.prime]) == CharHasher:
+                    # here is where we recursively insert sub hashtables:
+                    self.hashTable[total%self.prime].add(item)
+
+    def find(self, item):
+        """
+        returns boolean True or False based on whether item is contained
+        in self.hashTable. Since collision resolution in hashTable was 
+        achieved through chaining, find is called recursively on sub-hashtables
+        contained in self.hashTable
+
+        Args:
+            item (int): integer we are searching for in self.hashTable
 
         Returns:
-            total%self.prime or False: index of found item or False, if item is found or not, respectively
+            True or False (bool): boolean indicating presence of item in self.hashTable, or in a sub-hashtable of self.hashTable
         """
         total = charHash(item)
         if self.hashTable[total%self.prime] == item:
-            return total%self.prime 
-        else:
+            return True
+        if type(self.hashTable[total%self.prime]) == CharHasher:
+            ch = self.hashTable[total%self.prime]
+            return ch.find(item) # pick up here *******************
+        if self.hashTable[total%self.prime] == None:
             return False
+
 
 if __name__ == '__main__':
     # testing
@@ -144,12 +197,9 @@ if __name__ == '__main__':
         'zuckdogiamnotabot@facebook.com'
     ]
     ch = CharHasher(sl, primes)
-    print(ch.hashTable)
-    print(ch.prime)
-    print(ch.loadFactor)
+    print(ch)
     print()
 
-    print(ch.find('greg')) # returns false, check
     # check for pass:
     s = ''
     for i, item in enumerate(ch.hashTable):
@@ -157,3 +207,12 @@ if __name__ == '__main__':
             s = (i, item)
             break
     print(s) # finds brendan@gmail.com at index 2, check
+    print()
+
+    # add functionality
+    ch.add('greggregory.gregs@friendster.com')
+    print(ch) # check
+    print()
+
+    # find functionality
+    print(ch.find('greggregory.gregs@friendster.com')) # check
