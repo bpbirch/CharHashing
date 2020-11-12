@@ -15,15 +15,19 @@ def charHash(string):
     """
     uses unicode code point representation to convert characters in string to integer
     First converts to list of ordinal ints for each character in string
-    Then squares this integer, and then sheds first and last digits
+    Then combines all these numbers as a string, then converts to int
+    and squares that number, then sheds first and last digit
 
     Args: string to be hashed
 
     Returns:
         total (int): hashed integer representation of string
     """
-    ordChars = [ord(c) for c in string]
-    total = (sum(ordChars))**2
+    chars = [c for c in string]
+    chars = [ord(c) for c in chars]
+    chars = [str(c) for c in chars]
+    total = ''.join(chars)
+    total = int(total)**2
     total = str(total)
     if len(total) > 2:
         total = int(total[1:-1]) #somewhat arbitrary what section of squared string we choose to use
@@ -64,7 +68,7 @@ if __name__ == '__main__':
     print(ordSquaredHash(7, sl))
 
 # %%
-def charLoadFactorOptimizer(strList, primes):
+def charLoadFactorOptimizer(primes, strList):
     """
     creates a hashtable from list of strings (strList), with goal of maximizing
     loadFactor of the hashtable, with 
@@ -98,14 +102,14 @@ if __name__ == '__main__':
         'bigguy13@msn.com',
         'zuckdogiamnotabot@facebook.com'
     ]
-    hasht, p, loadF = charLoadFactorOptimizer(sl, primes)
+    hasht, p, loadF = charLoadFactorOptimizer(primes, sl)
     print(hasht)
     print(p)
     print(loadF) # our loadFactor isn't performing very well.
     # probably the best approach to further optimize loadFactor is to change the hashing method
 # %%
 class CharHasher:
-    def __init__(self, strList, primes):
+    def __init__(self, primes, strList):
         """
         class that contains a hashed table, created from strings
         hashing is achieved by converting each char in each string in strList to its unicode 
@@ -123,7 +127,7 @@ class CharHasher:
             strList (list): list of Strings to be hashed
             primes (list): list of prime numbers
         """
-        self.hashTable, self.prime, self.loadFactor = charLoadFactorOptimizer(strList, primes)
+        self.hashTable, self.prime, self.loadFactor = charLoadFactorOptimizer(primes, strList)
     
     def __repr__(self):
         return f'{self.hashTable}'
@@ -144,7 +148,7 @@ class CharHasher:
         Note that we utilize chain collision resolution in our add functionality
 
         Args:
-            item (int): integer to be added to self.hashTable
+            item (str): string to be added to self.hashTable
         """
         # first have to use foldNumber to find hashed value, to find index
         total = charHash(item)
@@ -153,11 +157,11 @@ class CharHasher:
         else:
             if self.hashTable[total%self.prime] == item: # avoiding duplicates
                 return
-            if type(self.hashTable[total%self.prime]) == str:
-                # if item at index is int, then create and insert a new instance of FoldHahser at index
+            if type(self.hashTable[total%self.prime]) == int:
+                # if item at index is int, then create and insert a new instance of FoldHasher at index
                 itemList = [self.hashTable[total%self.prime], item]
                 # then insert new hashTable at that index
-                self.hashTable[total%self.prime] = CharHasher(itemList, primes)
+                self.hashTable[total%self.prime] = CharHasher(primes, itemList)
             else:
                 if type(self.hashTable[total%self.prime]) == CharHasher:
                     # here is where we recursively insert sub hashtables:
@@ -171,7 +175,7 @@ class CharHasher:
         contained in self.hashTable
 
         Args:
-            item (int): integer we are searching for in self.hashTable
+            item (str): integer we are searching for in self.hashTable
 
         Returns:
             True or False (bool): boolean indicating presence of item in self.hashTable, or in a sub-hashtable of self.hashTable
@@ -181,7 +185,9 @@ class CharHasher:
             return True
         if type(self.hashTable[total%self.prime]) == CharHasher:
             ch = self.hashTable[total%self.prime]
-            return ch.find(item) # pick up here *******************
+            return ch.find(item) 
+        if type(self.hashTable[total%self.prime]) == int and self.hashTable[total%self.prime] != item:
+            return False
         if self.hashTable[total%self.prime] == None:
             return False
 
@@ -196,7 +202,8 @@ if __name__ == '__main__':
         'bigguy13@msn.com',
         'zuckdogiamnotabot@facebook.com'
     ]
-    ch = CharHasher(sl, primes)
+    ch = CharHasher(primes, sl)
+    
     print(ch)
     print()
 
@@ -216,3 +223,10 @@ if __name__ == '__main__':
 
     # find functionality
     print(ch.find('greggregory.gregs@friendster.com')) # check
+# %%
+l = [c for c in 'brendan']
+l = [ord(c) for c in l]
+l = [str(c) for c in l]
+l = ''.join(l)
+n = int(l)**2
+print(n)
